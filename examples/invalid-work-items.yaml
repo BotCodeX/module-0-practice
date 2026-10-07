@@ -1,0 +1,6 @@
+items:
+  - title: x
+    owner: "not valid because spaces are not allowed"
+    status: unknown
+    unexpected: this field must be rejected
+

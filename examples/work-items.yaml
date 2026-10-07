@@ -1,0 +1,16 @@
+items:
+  - title: Publish the platform API contract
+    description: Export the current OpenAPI document and run compatibility checks.
+    owner: platform-foundations
+    status: ready
+    labels:
+      - api
+      - contract
+  - title: Rehearse Git recovery
+    description: Recover a discarded commit with reflog in a disposable repository.
+    owner: platform-foundations
+    status: backlog
+    labels:
+      - git
+      - recovery
+
