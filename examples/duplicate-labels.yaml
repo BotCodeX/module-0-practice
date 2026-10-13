@@ -1,0 +1,7 @@
+items:
+  - title: Test duplicate labels
+    owner: platform-team
+    status: ready
+    labels:
+      - api
+      - API
