@@ -76,6 +76,46 @@ def test_pagination_and_filters_are_applied_in_repository_order() -> None:
     assert [item.owner for item in owner_page.items] == ["other-team"]
 
 
+
+def test_status_and_owner_filters_must_both_match() -> None:
+    repo = InMemoryWorkItemRepository()
+
+    matching, _ = repo.create(
+        WorkItemCreate(
+            title="Matching item",
+            owner="platform-team",
+            status=WorkItemStatus.READY,
+        ),
+        "filter-operation-1",
+    )
+    repo.create(
+        WorkItemCreate(
+            title="Wrong owner",
+            owner="other-team",
+            status=WorkItemStatus.READY,
+        ),
+        "filter-operation-2",
+    )
+    repo.create(
+        WorkItemCreate(
+            title="Wrong status",
+            owner="platform-team",
+            status=WorkItemStatus.DOING,
+        ),
+        "filter-operation-3",
+    )
+
+    result = repo.list(
+        limit=10,
+        cursor=None,
+        status=WorkItemStatus.READY,
+        owner="platform-team",
+    )
+
+    assert [item.id for item in result.items] == [matching.id]
+
+
+
 def test_update_of_unknown_item_fails() -> None:
     repo = InMemoryWorkItemRepository()
     with pytest.raises(ItemNotFoundError):

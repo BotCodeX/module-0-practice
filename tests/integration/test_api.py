@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from uuid import uuid4
+from xmlrpc import client
 
 import pytest
 from fastapi.testclient import TestClient
@@ -104,6 +105,9 @@ def test_conditional_update_rejects_stale_clients(
     assert stale.status_code == 412
     assert stale.json()["current_etag"] == '"2"'
 
+    saved = client.get(f"/api/v1/work-items/{item_id}")
+    assert saved.json()["status"] == "doing"
+
 
 def test_update_requires_a_valid_if_match(client: TestClient, auth_headers: dict[str, str]) -> None:
     created = client.post("/api/v1/work-items", headers=auth_headers, json=valid_payload())
@@ -120,6 +124,52 @@ def test_update_requires_a_valid_if_match(client: TestClient, auth_headers: dict
         json={"status": "doing"},
     )
     assert invalid.status_code == 400
+
+
+
+def test_api_pagination_follows_opaque_cursor(
+    client: TestClient, auth_headers: dict[str, str]
+) -> None:
+    item_ids = []
+
+    for number in range(3):
+        headers = auth_headers.copy()
+        headers["Idempotency-Key"] = f"pagination-test-{number:03d}"
+        payload = valid_payload()
+        payload["title"] = f"Pagination item {number}"
+
+        created = client.post(
+            "/api/v1/work-items",
+            headers=headers,
+            json=payload,
+        )
+        assert created.status_code == 201
+        item_ids.append(created.json()["id"])
+
+    first_page = client.get("/api/v1/work-items", params={"limit": 1})
+    assert first_page.status_code == 200
+    assert [item["id"] for item in first_page.json()["items"]] == [item_ids[0]]
+
+    cursor = first_page.json()["next_cursor"]
+    assert cursor is not None
+
+    second_page = client.get(
+        "/api/v1/work-items",
+        params={"limit": 1, "cursor": cursor},
+    )
+    assert second_page.status_code == 200
+    assert [item["id"] for item in second_page.json()["items"]] == [item_ids[1]]
+
+    cursor = second_page.json()["next_cursor"]
+    assert cursor is not None
+
+    third_page = client.get(
+        "/api/v1/work-items",
+        params={"limit": 1, "cursor": cursor},
+    )
+    assert third_page.status_code == 200
+    assert [item["id"] for item in third_page.json()["items"]] == [item_ids[2]]
+    assert third_page.json()["next_cursor"] is None
 
 
 def test_not_found_and_invalid_cursor_are_separate_problems(client: TestClient) -> None:
