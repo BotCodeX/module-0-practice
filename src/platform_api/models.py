@@ -69,7 +69,10 @@ class WorkItem(BaseModel):
 
     id: UUID
     title: str
-    description: str | None
+    description: str | None = Field(
+        description="Details about the work item",
+        examples=["Update the API documentation"],
+    )
     owner: str
     status: WorkItemStatus
     labels: list[str]
