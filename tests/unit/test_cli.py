@@ -21,6 +21,7 @@ def test_invalid_yaml_contract_is_rejected() -> None:
     with pytest.raises(ValidationError):
         load_work_item_file(Path("examples/invalid-work-items.yaml"))
 
+
 def test_duplicate_labels_in_yaml_are_rejected() -> None:
     with pytest.raises(ValidationError, match="labels must be unique"):
         load_work_item_file(Path("examples/duplicate-labels.yaml"))

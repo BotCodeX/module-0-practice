@@ -76,7 +76,6 @@ def test_pagination_and_filters_are_applied_in_repository_order() -> None:
     assert [item.owner for item in owner_page.items] == ["other-team"]
 
 
-
 def test_status_and_owner_filters_must_both_match() -> None:
     repo = InMemoryWorkItemRepository()
 
@@ -113,7 +112,6 @@ def test_status_and_owner_filters_must_both_match() -> None:
     )
 
     assert [item.id for item in result.items] == [matching.id]
-
 
 
 def test_update_of_unknown_item_fails() -> None:
