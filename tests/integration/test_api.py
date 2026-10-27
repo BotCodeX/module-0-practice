@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from uuid import uuid4
-from xmlrpc import client
 
 import pytest
 from fastapi.testclient import TestClient
@@ -124,7 +123,6 @@ def test_update_requires_a_valid_if_match(client: TestClient, auth_headers: dict
         json={"status": "doing"},
     )
     assert invalid.status_code == 400
-
 
 
 def test_api_pagination_follows_opaque_cursor(
