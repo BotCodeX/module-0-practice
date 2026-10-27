@@ -13,7 +13,7 @@ pytestmark = pytest.mark.unit
 def test_valid_yaml_is_loaded() -> None:
     path = Path("examples/work-items.yaml")
     loaded = load_work_item_file(path)
-    assert len(loaded.items) == 2
+    assert len(loaded.items)==2
     assert idempotency_key(loaded.items[0]).startswith("cli-")
 
 
