@@ -20,6 +20,7 @@ from platform_api.models import (
     WorkItemCreate,
     WorkItemPage,
     WorkItemPatch,
+    WorkItemPriority,
     WorkItemStatus,
 )
 from platform_api.repository import (
@@ -132,6 +133,7 @@ def create_app() -> FastAPI:
         limit: Annotated[int, Query(ge=1, le=100)] = 20,
         cursor: str | None = None,
         status_filter: Annotated[WorkItemStatus | None, Query(alias="status")] = None,
+        priority: WorkItemPriority | None = None,
         owner: Annotated[str | None, Query(pattern=r"^[a-z0-9][a-z0-9-]{1,62}$")] = None,
     ) -> WorkItemPage:
         try:
@@ -139,6 +141,7 @@ def create_app() -> FastAPI:
                 limit=limit,
                 cursor=cursor,
                 status=status_filter,
+                priority=priority,
                 owner=owner,
             )
         except InvalidCursorError as exc:

@@ -15,6 +15,7 @@ def valid_payload() -> dict[str, object]:
         "owner": "platform-team",
         "status": "ready",
         "labels": ["api", "contract"],
+        "priority": "normal",
     }
 
 
@@ -178,18 +179,28 @@ def test_not_found_and_invalid_cursor_are_separate_problems(client: TestClient) 
 
 
 def test_graphql_read_prototype(client: TestClient, auth_headers: dict[str, str]) -> None:
-    created = client.post("/api/v1/work-items", headers=auth_headers, json=valid_payload())
+    # Create a work item with the default priority.
+    created = client.post(
+        "/api/v1/work-items",
+        headers=auth_headers,
+        json=valid_payload(),
+    )
+    assert created.status_code == 201
     item_id = created.json()["id"]
+
+    # Test fetching a single work item through GraphQL.
     response = client.post(
         "/graphql",
         json={
-            "query": "query($id: ID!) { workItem(id: $id) { id title status } }",
+            "query": "query($id: ID!) { workItem(id: $id) { id title status priority } }",
             "variables": {"id": item_id},
         },
     )
     assert response.status_code == 200
     assert response.json()["data"]["workItem"]["id"] == item_id
+    assert response.json()["data"]["workItem"]["priority"] == "normal"
 
+    # Test the existing GraphQL status filter.
     listed = client.post(
         "/graphql",
         json={"query": '{ workItems(limit: 10, status: "ready") { id title } }'},
@@ -197,9 +208,97 @@ def test_graphql_read_prototype(client: TestClient, auth_headers: dict[str, str]
     assert listed.status_code == 200
     assert listed.json()["data"]["workItems"][0]["id"] == item_id
 
+    # Create a second work item with high priority.
+    high_payload = valid_payload()
+    high_payload["title"] = "High priority GraphQL task"
+    high_payload["priority"] = "high"
+
+    high_created = client.post(
+        "/api/v1/work-items",
+        headers={
+            **auth_headers,
+            "Idempotency-Key": "graphql-priority-high-001",
+        },
+        json=high_payload,
+    )
+    assert high_created.status_code == 201
+
+    # Test filtering work items by high priority through GraphQL.
+    high_listed = client.post(
+        "/graphql",
+        json={"query": '{ workItems(limit: 10, priority: "high") { id title priority } }'},
+    )
+    assert high_listed.status_code == 200
+
+    high_items = high_listed.json()["data"]["workItems"]
+    assert len(high_items) == 1
+    assert high_items[0]["id"] == high_created.json()["id"]
+    assert high_items[0]["priority"] == "high"
+
+    # Test that requesting a nonexistent work item returns null.
     missing = client.post(
         "/graphql",
         json={"query": '{ workItem(id: "not-a-uuid") { id } }'},
     )
     assert missing.status_code == 200
     assert missing.json()["data"]["workItem"] is None
+
+
+def test_create_defaults_to_normal_priority(
+    client: TestClient, auth_headers: dict[str, str]
+) -> None:
+    payload = valid_payload()
+    payload.pop("priority")
+
+    response = client.post(
+        "/api/v1/work-items",
+        headers=auth_headers,
+        json=payload,
+    )
+
+    assert response.status_code == 201
+    assert response.json()["priority"] == "normal"
+
+
+def test_api_filters_work_items_by_priority(
+    client: TestClient, auth_headers: dict[str, str]
+) -> None:
+    high_payload = valid_payload()
+    high_payload["title"] = "Urgent task"
+    high_payload["priority"] = "high"
+
+    low_payload = valid_payload()
+    low_payload["title"] = "Routine task"
+    low_payload["priority"] = "low"
+
+    high_created = client.post(
+        "/api/v1/work-items",
+        headers=auth_headers,
+        json=high_payload,
+    )
+    low_created = client.post(
+        "/api/v1/work-items",
+        headers={**auth_headers, "Idempotency-Key": "priority-low-001"},
+        json=low_payload,
+    )
+
+    assert high_created.status_code == 201
+    assert low_created.status_code == 201
+
+    response = client.get(
+        "/api/v1/work-items",
+        params={"priority": "high"},
+    )
+
+    assert response.status_code == 200
+    assert [item["id"] for item in response.json()["items"]] == [high_created.json()["id"]]
+
+
+def test_invalid_priority_filter_returns_422(client: TestClient) -> None:
+    response = client.get(
+        "/api/v1/work-items",
+        params={"priority": "urgent"},
+    )
+
+    assert response.status_code == 422
+    assert response.headers["content-type"].startswith("application/problem+json")

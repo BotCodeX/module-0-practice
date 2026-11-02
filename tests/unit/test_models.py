@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from platform_api.models import WorkItemCreate, WorkItemPatch
+from platform_api.models import WorkItemCreate, WorkItemPatch, WorkItemPriority
 
 pytestmark = pytest.mark.unit
 
@@ -21,3 +21,12 @@ def test_duplicate_labels_are_rejected() -> None:
 def test_empty_patch_is_rejected() -> None:
     with pytest.raises(ValidationError, match="at least one field"):
         WorkItemPatch()
+
+
+def test_default_priority_is_normal() -> None:
+    item = WorkItemCreate(
+        title="A valid item",
+        owner="platform-team",
+    )
+
+    assert item.priority == WorkItemPriority.NORMAL

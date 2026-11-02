@@ -22,5 +22,6 @@ Keep the versioned REST API as the supported interface. Retain a read-only Graph
 
 - REST compatibility is release-blocking.
 - The GraphQL schema is educational and has no stability promise.
+- The GraphQL prototype exposes corresponding read-only work-item fields and filters, including priority, for comparison with REST.
 - Reconsider this decision if real consumers require multiple related resources in variable shapes and REST aggregation becomes the dominant source of coupling or over-fetching.
 

@@ -18,6 +18,12 @@ class WorkItemStatus(StrEnum):
     DONE = "done"
 
 
+class WorkItemPriority(StrEnum):
+    LOW = "low"
+    NORMAL = "normal"
+    HIGH = "high"
+
+
 class WorkItemCreate(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
@@ -25,6 +31,7 @@ class WorkItemCreate(BaseModel):
     description: str | None = Field(default=None, max_length=2000)
     owner: str = Field(pattern=OWNER_PATTERN)
     status: WorkItemStatus = WorkItemStatus.BACKLOG
+    priority: WorkItemPriority = WorkItemPriority.NORMAL
     labels: list[str] = Field(default_factory=list, max_length=8)
 
     @field_validator("labels")
@@ -75,6 +82,7 @@ class WorkItem(BaseModel):
     )
     owner: str
     status: WorkItemStatus
+    priority: WorkItemPriority
     labels: list[str]
     version: int = Field(ge=1)
     created_at: datetime

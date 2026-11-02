@@ -14,6 +14,7 @@ from platform_api.models import (
     WorkItemCreate,
     WorkItemPage,
     WorkItemPatch,
+    WorkItemPriority,
     WorkItemStatus,
 )
 
@@ -111,6 +112,7 @@ class InMemoryWorkItemRepository:
         limit: int,
         cursor: str | None,
         status: WorkItemStatus | None,
+        priority: WorkItemPriority | None = None,
         owner: str | None,
     ) -> WorkItemPage:
         offset = _decode_cursor(cursor)
@@ -118,6 +120,8 @@ class InMemoryWorkItemRepository:
             items = list(self._items.values())
             if status is not None:
                 items = [item for item in items if item.status == status]
+            if priority is not None:
+                items = [item for item in items if item.priority == priority]
             if owner is not None:
                 items = [item for item in items if item.owner == owner]
             page = items[offset : offset + limit]

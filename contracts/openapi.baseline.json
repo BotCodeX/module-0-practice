@@ -39,6 +39,9 @@
             "title": "Owner",
             "type": "string"
           },
+          "priority": {
+            "$ref": "#/components/schemas/WorkItemPriority"
+          },
           "status": {
             "$ref": "#/components/schemas/WorkItemStatus"
           },
@@ -63,6 +66,7 @@
           "description",
           "owner",
           "status",
+          "priority",
           "labels",
           "version",
           "created_at",
@@ -98,6 +102,10 @@
             "pattern": "^[a-z0-9][a-z0-9-]{1,62}$",
             "title": "Owner",
             "type": "string"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/WorkItemPriority",
+            "default": "normal"
           },
           "status": {
             "$ref": "#/components/schemas/WorkItemStatus",
@@ -214,6 +222,15 @@
         "title": "WorkItemPatch",
         "type": "object"
       },
+      "WorkItemPriority": {
+        "enum": [
+          "low",
+          "normal",
+          "high"
+        ],
+        "title": "WorkItemPriority",
+        "type": "string"
+      },
       "WorkItemStatus": {
         "enum": [
           "backlog",
@@ -285,6 +302,22 @@
                 }
               ],
               "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "priority",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/WorkItemPriority"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Priority"
             }
           },
           {

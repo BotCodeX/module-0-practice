@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 
-from platform_api.models import WorkItemCreate, WorkItemPatch, WorkItemStatus
+from platform_api.models import WorkItemCreate, WorkItemPatch, WorkItemPriority, WorkItemStatus
 from platform_api.repository import (
     IdempotencyConflictError,
     InMemoryWorkItemRepository,
@@ -118,3 +118,35 @@ def test_update_of_unknown_item_fails() -> None:
     repo = InMemoryWorkItemRepository()
     with pytest.raises(ItemNotFoundError):
         repo.update(uuid4(), WorkItemPatch(status=WorkItemStatus.DONE), expected_version=1)
+
+
+def test_priority_filter_returns_only_matching_items() -> None:
+    repo = InMemoryWorkItemRepository()
+
+    high_item, _ = repo.create(
+        WorkItemCreate(
+            title="High priority task",
+            owner="platform-team",
+            priority=WorkItemPriority.HIGH,
+        ),
+        "priority-operation-1",
+    )
+
+    repo.create(
+        WorkItemCreate(
+            title="Low priority task",
+            owner="platform-team",
+            priority=WorkItemPriority.LOW,
+        ),
+        "priority-operation-2",
+    )
+
+    result = repo.list(
+        limit=10,
+        cursor=None,
+        status=None,
+        owner=None,
+        priority=WorkItemPriority.HIGH,
+    )
+
+    assert [item.id for item in result.items] == [high_item.id]
